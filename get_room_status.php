@@ -1,125 +1,76 @@
 <?php
 require 'config/db.php';
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 
-$start = $_GET['start'] ?? date('Y-m-d');
-$end = $_GET['end'] ?? date('Y-m-d', strtotime('+7 days'));
+$start = date('Y-m-d', strtotime('-7 days'));
+$end = date('Y-m-d', strtotime('+14 days'));
 
-$rooms = $pdo->query("SELECT id, room_number FROM rooms")->fetchAll(PDO::FETCH_ASSOC);
+$rooms = $pdo->query("SELECT id, room_number FROM rooms ORDER BY room_number ASC")->fetchAll(PDO::FETCH_ASSOC);
 
-// Tüm rezervasyonları al
 $stmt = $pdo->prepare("
-  SELECT * FROM reservations
-  WHERE start_date <= :end AND end_date >= :start
+  SELECT r.*, c.full_name, c.balance, rm.room_number
+  FROM reservations r
+  LEFT JOIN customers c ON r.customer_id = c.id
+  LEFT JOIN rooms rm ON r.room_id = rm.id
+  WHERE r.start_date <= :end AND r.end_date > :start
 ");
-$stmt->execute(['start' => $start, 'end' => $end]);
+$stmt->execute(['end' => $end, 'start' => $start]);
 $reservations = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+// her gün + her oda = tek event
 $events = [];
 
 foreach ($rooms as $room) {
     $roomId = $room['id'];
     $roomNumber = $room['room_number'];
+    $current = new DateTime($start);
+    $endDate = new DateTime($end);
 
-    // Takvim aralığında gün gün ilerle
-    $periodStart = new DateTime($start);
-    $periodEnd = new DateTime($end);
-    $periodEnd->modify('+1 day'); // dahil olması için
-
-    // Doluluk günlerini diziye aktar
-    $occupiedDates = [];
-
-    foreach ($reservations as $res) {
-        if ($res['room_id'] != $roomId) continue;
-
-        $resStart = new DateTime($res['start_date']);
-        $resEnd = new DateTime($res['end_date']);
-        $resEnd->modify('+1 day');
-
-        while ($resStart < $resEnd) {
-            $occupiedDates[$resStart->format('Y-m-d')] = $res;
-            $resStart->modify('+1 day');
-        }
-    }
-
-    // Boş gün bloklarını bul
-    $blockStart = null;
-    $current = clone $periodStart;
-
-    while ($current < $periodEnd) {
+    while ($current < $endDate) {
         $dateStr = $current->format('Y-m-d');
+        $nextDate = (clone $current)->modify('+1 day')->format('Y-m-d');
 
-        if (!isset($occupiedDates[$dateStr])) {
-            if (!$blockStart) {
-                $blockStart = clone $current;
-            }
-        } else {
-            // O gün doluysa, varsa önceki boş bloğu kaydet
-            if ($blockStart) {
+        $eventAdded = false;
+
+        foreach ($reservations as $res) {
+            if (
+                $res['room_id'] == $roomId &&
+                $dateStr >= $res['start_date'] &&
+                $dateStr < $res['end_date']
+            ) {
+                // DOLU
                 $events[] = [
-                    'id' => "empty_{$roomId}_{$blockStart->format('Ymd')}",
-                    'title' => "Oda $roomNumber (boş)",
-                    'start' => $blockStart->format('Y-m-d'),
-                    'end' => $current->format('Y-m-d'),
-                    'color' => '#28a745',
-                    'textColor' => '#fff',
-                    'extendedProps' => [
-                        'roomId' => $roomId,
-                        'status' => 'boş',
-                        'customer_name' => '',
-                        'balance' => '0.00',
-                        'payment_status' => ''
-                    ]
-                ];
-                $blockStart = null;
+    'id' => 'res_' . $res['id'] . '_' . $dateStr,
+    'title' => 'Oda ' . $roomNumber . ' - ' . $res['full_name'] . ' (₺' . number_format($res['balance'], 2) . ')',
+    'start' => $dateStr,
+    'end' => $nextDate,
+    'color' => '#dc3545',
+    'roomId' => $roomId,
+    'room_number' => $roomNumber,
+    'status' => 'dolu',
+    'reservationId' => $res['id'] // 🔥 bu ekleniyor!
+];
+                $eventAdded = true;
+                break;
             }
+        }
 
-            // Bu gün doluysa, dolu event'i ekle (sadece bir kez)
-            $res = $occupiedDates[$dateStr];
-            $resId = $res['id'];
-
-            if (!isset($added[$resId])) {
-                $events[] = [
-                    'id' => $res['id'],
-                    'title' => "Oda $roomNumber",
-                    'start' => $res['start_date'],
-                    'end' => date('Y-m-d', strtotime($res['end_date'] . ' +1 day')),
-                    'color' => match($res['payment_status']) {
-                        'tamamlandı' => '#28a745',
-                        'kısmen'     => '#ffc107',
-                        default      => '#dc3545',
-                    },
-                    'extendedProps' => [
-                        'roomId' => $roomId,
-                        'status' => $res['status'],
-                        'customer_name' => $res['customer_name'] ?? 'Müşteri',
-                        'balance' => number_format($res['payment_amount'], 2),
-                        'payment_status' => $res['payment_status']
-                    ]
-                ];
-                $added[$resId] = true;
-            }
+        if (!$eventAdded) {
+            // BOŞ
+            $events[] = [
+                'id' => 'empty_' . $roomId . '_' . $dateStr,
+                'title' => 'Oda ' . $roomNumber . ' - Boş',
+                'start' => $dateStr,
+                'end' => $nextDate,
+                'color' => '#28a745',
+                'roomId' => $roomId,
+                'room_number' => $roomNumber,
+                'status' => 'boş'
+            ];
         }
 
         $current->modify('+1 day');
-    }
-
-    // Dönem sonuna kadar devam eden boşluk varsa ekle
-    if ($blockStart) {
-        $events[] = [
-            'id' => "empty_{$roomId}_{$blockStart->format('Ymd')}",
-            'title' => "Oda $roomNumber (boş)",
-            'start' => $blockStart->format('Y-m-d'),
-            'end' => $periodEnd->format('Y-m-d'),
-            'color' => '#28a745',
-            'textColor' => '#fff',
-            'extendedProps' => [
-                'roomId' => $roomId,
-                'status' => 'boş',
-                'customer_name' => '',
-                'balance' => '0.00',
-                'payment_status' => ''
-            ]
-        ];
     }
 }
 

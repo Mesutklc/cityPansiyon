@@ -1,55 +1,54 @@
 <?php
-session_start();
 require 'config/db.php';
+session_start();
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $room_id = $_POST['room_id'] ?? null;
-    $date = $_POST['date'] ?? null;
-    $customer_name = $_POST['customer_name'] ?? '';
-    $phone = $_POST['phone'] ?? '';
-    $email = $_POST['email'] ?? '';
-    $tc = $_POST['tc'] ?? '';
-    $days = $_POST['days'] ?? 1;
-    $price = $_POST['price'] ?? 0;
-    $note = $_POST['note'] ?? '';
-    $status = $_POST['status'] ?? 'rezerve';
-
-    if (!$room_id || !$date || !$customer_name || !$phone || !$price) {
-        $_SESSION['reservation_error'] = "Eksik bilgi girdiniz.";
-        header("Location: dashboard.php");
-        exit;
-    }
-
-    // Başlangıç ve bitiş tarihini hesapla
-    $startDate = new DateTime($date);
-    $endDate = (clone $startDate)->modify("+".((int)$days - 1)." days");
-
-    try {
-        $stmt = $pdo->prepare("INSERT INTO reservations 
-            (room_id, customer_name, phone, email, tc, start_date, end_date, days, price, note, status) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->execute([
-            $room_id,
-            $customer_name,
-            $phone,
-            $email,
-            $tc,
-            $startDate->format('Y-m-d'),
-            $endDate->format('Y-m-d'),
-            $days,
-            $price,
-            $note,
-            $status
-        ]);
-
-        $_SESSION['reservation_success'] = "Rezervasyon başarıyla eklendi.";
-    } catch (PDOException $e) {
-        $_SESSION['reservation_error'] = "Veritabanı hatası: " . $e->getMessage();
-    }
-
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header("Location: dashboard.php");
+    exit;
+}
+
+$customerId   = $_POST['customer_id'] ?? null;
+$roomId       = $_POST['room_id'] ?? null;
+$startDate    = $_POST['start_date'] ?? null;
+$endDate      = $_POST['end_date'] ?? null;
+$dailyPrice   = floatval($_POST['daily_price'] ?? 0);
+$totalPrice   = floatval($_POST['total_price'] ?? 0);
+$note         = $_POST['note'] ?? '';
+$status       = 'dolu';
+
+// 1. Gerekli alan kontrolü
+if (!$customerId || !$roomId || !$startDate || !$endDate || $totalPrice <= 0) {
+    die("Eksik bilgi veya geçersiz toplam fiyat. Kayıt yapılamıyor.");
+}
+
+// 2. Rezervasyonu Kaydet
+$stmt = $pdo->prepare("
+    INSERT INTO reservations 
+    (customer_id, room_id, start_date, end_date, price, note, status) 
+    VALUES 
+    (:customer_id, :room_id, :start_date, :end_date, :price, :note, :status)
+");
+
+$success = $stmt->execute([
+    'customer_id' => $customerId,
+    'room_id'     => $roomId,
+    'start_date'  => $startDate,
+    'end_date'    => $endDate,
+    'price'       => $totalPrice,
+    'note'        => $note,
+    'status'      => $status
+]);
+
+// 3. Müşteri bakiyesi güncelleme
+if ($success) {
+    $stmtBalance = $pdo->prepare("UPDATE customers SET balance = balance + :amount WHERE id = :id");
+    $stmtBalance->execute([
+        'amount' => $totalPrice,
+        'id'     => $customerId
+    ]);
+
+    header("Location: dashboard.php?added=1");
     exit;
 } else {
-    header("Location: dashboard.php");
-    exit;
+    die("Rezervasyon kaydı başarısız.");
 }

@@ -1,29 +1,40 @@
 <?php
-session_start();
-header('Content-Type: application/json');
-
-if (!isset($_SESSION['admin_logged_in'])) {
-    echo json_encode(['success' => false, 'message' => 'Giriş yapılmamış']);
-    exit;
-}
-
 require 'config/db.php';
+session_start();
 
-$data = json_decode(file_get_contents('php://input'), true);
-
-if (!$data || !isset($data['reservation_id'])) {
-    echo json_encode(['success' => false, 'message' => 'Geçersiz veri']);
+if ($_SERVER['REQUEST_METHOD'] !== 'GET' || !isset($_GET['id'])) {
+    header('Location: dashboard.php');
     exit;
 }
 
-$reservation_id = (int)$data['reservation_id'];
+$reservationId = intval($_GET['id']);
 
+// 1. Rezervasyon bilgilerini çek
+$stmt = $pdo->prepare("SELECT customer_id, price FROM reservations WHERE id = ?");
+$stmt->execute([$reservationId]);
+$reservation = $stmt->fetch(PDO::FETCH_ASSOC);
 
-$stmt = $pdo->prepare("DELETE FROM reservations WHERE id = ?");
-$deleted = $stmt->execute([$reservation_id]);
+if (!$reservation) {
+    die("Rezervasyon bulunamadı.");
+}
 
-if ($deleted) {
-    echo json_encode(['success' => true, 'message' => 'Rezervasyon başarıyla iptal edildi']);
+$customerId = intval($reservation['customer_id']);
+$price      = floatval($reservation['price']);
+
+// 2. Rezervasyonu sil
+$stmtDelete = $pdo->prepare("DELETE FROM reservations WHERE id = ?");
+$success = $stmtDelete->execute([$reservationId]);
+
+// 3. Müşteri bakiyesini güncelle (fiyatı geri al)
+if ($success) {
+    $stmtBalance = $pdo->prepare("UPDATE customers SET balance = balance - :amount WHERE id = :id");
+    $stmtBalance->execute([
+        'amount' => $price,
+        'id'     => $customerId
+    ]);
+
+    header('Location: dashboard.php?deleted=1');
+    exit;
 } else {
-    echo json_encode(['success' => false, 'message' => 'İptal sırasında hata oluştu']);
+    die("Silme işlemi başarısız.");
 }

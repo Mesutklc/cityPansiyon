@@ -242,3 +242,73 @@ COMMIT;
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+
+CREATE TABLE cash_accounts (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,  -- örn: Nakit, Kart, Havale, ETS
+    balance DECIMAL(10,2) DEFAULT 0
+);
+
+ALTER TABLE cash_transactions
+ADD COLUMN cash_account_id INT,
+ADD FOREIGN KEY (cash_account_id) REFERENCES cash_accounts(id);
+
+USE citypansiyon;
+ALTER TABLE cash_transactions
+ADD COLUMN cash_account_id INT,
+ADD FOREIGN KEY (cash_account_id) REFERENCES cash_accounts(id);
+
+CREATE TABLE cash_accounts (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,  -- örn: Nakit, Kart, Havale, ETS
+    balance DECIMAL(10,2) DEFAULT 0
+);
+
+ALTER TABLE cash_transactions
+ADD COLUMN cash_account_id INT,
+ADD FOREIGN KEY (cash_account_id) REFERENCES cash_accounts(id);
+
+ALTER TABLE cash_transactions DROP COLUMN kasa_tipi;
+ALTER TABLE cash_transactions ADD COLUMN customer_id INT NULL;
+CREATE TABLE kiosk_products (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    unit_price DECIMAL(10,2) NOT NULL
+);
+CREATE TABLE kiosk_sales (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    product_id INT NOT NULL,
+    quantity INT NOT NULL,
+    total_price DECIMAL(10,2) NOT NULL,
+    payment_method VARCHAR(50) NOT NULL,
+    cash_account_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (product_id) REFERENCES kiosk_products(id),
+    FOREIGN KEY (cash_account_id) REFERENCES cash_accounts(id)
+);
+
+use citypansiyon;
+CREATE TABLE kiosk_products (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    unit_price DECIMAL(10,2) NOT NULL
+);
+CREATE TABLE kiosk_sales (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    product_id INT NOT NULL,
+    quantity INT NOT NULL,
+    total_price DECIMAL(10,2) NOT NULL,
+    payment_method VARCHAR(50) NOT NULL,
+    cash_account_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (product_id) REFERENCES kiosk_products(id),
+    FOREIGN KEY (cash_account_id) REFERENCES cash_accounts(id)
+);
+CREATE TABLE expenses (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    description VARCHAR(255) NOT NULL,
+    amount DECIMAL(10,2) NOT NULL,
+    cash_account_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (cash_account_id) REFERENCES cash_accounts(id)
+);

@@ -1,64 +1,66 @@
 <?php
 require 'config/db.php';
-$reservation_id = $_GET['reservation_id'] ?? null;
 include "header.php";
 
+$reservation_id = $_GET['reservation_id'] ?? null;
 if (!$reservation_id) {
-    echo "Rezervasyon ID eksik!";
-    exit;
+    die("Geçersiz rezervasyon ID");
 }
 
-$res = $pdo->prepare("SELECT * FROM reservations WHERE id = ?");
-$res->execute([$reservation_id]);
-$reservation = $res->fetch();
+// Rezervasyon ve müşteri bilgileri
+$stmt = $pdo->prepare("
+    SELECT r.*, c.full_name, c.id AS customer_id 
+    FROM reservations r
+    JOIN customers c ON r.customer_id = c.id
+    WHERE r.id = ?
+");
+$stmt->execute([$reservation_id]);
+$reservation = $stmt->fetch();
 
 if (!$reservation) {
-    echo "Rezervasyon bulunamadı!";
-    exit;
+    die("Rezervasyon bulunamadı");
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $amount = $_POST['payment_amount'];
-    $method = $_POST['payment_method'];
-    $paid_days = $_POST['paid_days'];
-
-    $update = $pdo->prepare("UPDATE reservations SET payment_status = ?, payment_amount = ?, payment_method = ?, paid_days = ? WHERE id = ?");
-    $update->execute(['ödendi', $amount, $method, $paid_days, $reservation_id]);
-
-    header("Location: dashboard.php");
-    exit;
-}
+// Kasa türlerini çek
+$accounts = $pdo->query("SELECT id, name FROM cash_accounts")->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <meta charset="UTF-8">
-    <title>Ödeme</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <meta charset="UTF-8">
+  <title>Ödeme Al</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
 </head>
 <body>
-<div class="container my-5">
-    <h2>Ödeme Bilgisi</h2>
-    <form method="POST">
-        <div class="mb-3">
-            <label class="form-label">Ödeme Tutarı (₺)</label>
-            <input type="number" name="payment_amount" class="form-control" required />
-        </div>
-        <div class="mb-3">
-            <label class="form-label">Ödeme Yöntemi</label>
-            <select name="payment_method" class="form-select" required>
-                <option value="nakit">Nakit</option>
-                <option value="kredi kartı">Kredi Kartı</option>
-                <option value="havale">Havale</option>
-            </select>
-        </div>
-        <div class="mb-3">
-            <label class="form-label">Kaç Günlük Ödeme Yapıldı?</label>
-            <input type="number" name="paid_days" class="form-control" min="1" value="<?= $reservation['days'] ?>" required />
-        </div>
-        <button type="submit" class="btn btn-primary">Ödemeyi Kaydet</button>
-    </form>
+<div class="container mt-4">
+  <h2>Ödeme Al</h2>
+  <form action="save_payment.php" method="POST">
+    <input type="hidden" name="reservation_id" value="<?= $reservation['id'] ?>">
+    <input type="hidden" name="customer_id" value="<?= $reservation['customer_id'] ?>">
+
+    <div class="mb-3">
+      <label>Müşteri</label>
+      <input type="text" class="form-control" value="<?= $reservation['full_name'] ?>" readonly>
+    </div>
+
+    <div class="mb-3">
+      <label>Ödeme Tutarı (₺)</label>
+      <input type="number" name="amount" class="form-control" required>
+    </div>
+
+    <div class="mb-3">
+      <label>Ödeme Yöntemi (Kasa Tipi)</label>
+      <select name="cash_account_id" class="form-control" required>
+        <option value="">-- Seçin --</option>
+        <?php foreach ($accounts as $account): ?>
+          <option value="<?= $account['id'] ?>"><?= $account['name'] ?></option>
+        <?php endforeach; ?>
+      </select>
+    </div>
+
+    <button type="submit" class="btn btn-success">Ödemeyi Kaydet</button>
+  </form>
 </div>
 </body>
 </html>

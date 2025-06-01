@@ -6,7 +6,7 @@ if (!isset($_SESSION['admin_logged_in'])) {
 }
 
 require 'config/db.php';
-
+include "header.php";
 // Oda ekleme işlemi
 $add_error = "";
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_room'])) {
