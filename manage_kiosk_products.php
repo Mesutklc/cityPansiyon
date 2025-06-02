@@ -97,6 +97,7 @@ $products = $pdo->query("SELECT * FROM kiosk_products ORDER BY id DESC")->fetchA
     </tbody>
   </table>
       </div>
+<?php include 'footer.php'; ?>
 
 <script>
 $(document).ready(function(){

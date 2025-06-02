@@ -62,5 +62,7 @@ $accounts = $pdo->query("SELECT id, name FROM cash_accounts")->fetchAll(PDO::FET
     <button type="submit" class="btn btn-success">Ödemeyi Kaydet</button>
   </form>
 </div>
+<?php include 'footer.php'; ?>
+
 </body>
 </html>

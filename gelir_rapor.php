@@ -30,10 +30,23 @@ foreach ($data as $row) {
     $kar[] = (float)$row['gelir'] - (float)$row['gider'];
 }
 
-// Toplamlar
 $totalGelir = array_sum($gelir);
 $totalGider = array_sum($gider);
 $totalKar = $totalGelir - $totalGider;
+
+// Gider kalemleri verisi
+$typeStmt = $pdo->prepare("
+    SELECT et.name AS type_name, SUM(e.amount) AS total
+    FROM expenses e
+    JOIN expense_types et ON e.expense_type_id = et.id
+    WHERE e.created_at BETWEEN :start AND :end
+    GROUP BY et.id
+");
+$typeStmt->execute(['start' => $startDate, 'end' => $endDate]);
+$typeData = $typeStmt->fetchAll(PDO::FETCH_ASSOC);
+
+$typeLabels = array_column($typeData, 'type_name');
+$typeTotals = array_map('floatval', array_column($typeData, 'total'));
 ?>
 
 <div class="container">
@@ -54,6 +67,30 @@ $totalKar = $totalGelir - $totalGider;
     </form>
 
     <canvas id="karChart" height="100" class="mt-5"></canvas>
+
+    <h4 class="mt-5">💼 Kasaların Güncel Durumu</h4>
+    <table class="table table-bordered mt-2">
+        <thead>
+            <tr>
+                <th>Kasa Adı</th>
+                <th>Bakiye (₺)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php
+            $kasalar = $pdo->query("SELECT name, balance FROM cash_accounts ORDER BY name ASC")->fetchAll();
+            foreach ($kasalar as $kasa):
+            ?>
+            <tr>
+                <td><?= htmlspecialchars($kasa['name']) ?></td>
+                <td><?= number_format($kasa['balance'], 2) ?> ₺</td>
+            </tr>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
+
+    <h4 class="mt-5">📊 Gider Kalemleri Grafiği</h4>
+    <canvas id="giderChart" height="100"></canvas>
 
     <table class="table table-bordered mt-5">
         <thead>
@@ -79,16 +116,17 @@ $totalKar = $totalGelir - $totalGider;
                 <th>TOPLAM</th>
                 <th><?= number_format($totalGelir, 2) ?> ₺</th>
                 <th><?= number_format($totalGider, 2) ?> ₺</th>
-                <th><?= number_format($totalKar, 2) ?> ₺</th>
+                <th ><?=   number_format($totalKar, 2) ?> ₺</th>
             </tr>
         </tfoot>
     </table>
 </div>
+<?php include 'footer.php'; ?>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    const ctx = document.getElementById('karChart').getContext('2d');
-    new Chart(ctx, {
+    const ctx1 = document.getElementById('karChart').getContext('2d');
+    new Chart(ctx1, {
         type: 'line',
         data: {
             labels: <?= json_encode($labels) ?>,
@@ -122,6 +160,28 @@ $totalKar = $totalGelir - $totalGider;
                 title: {
                     display: true,
                     text: 'Tarihe Göre Gelir - Gider - Kar Grafiği'
+                }
+            }
+        }
+    });
+
+    const ctx2 = document.getElementById('giderChart').getContext('2d');
+    new Chart(ctx2, {
+        type: 'bar',
+        data: {
+            labels: <?= json_encode($typeLabels) ?>,
+            datasets: [{
+                label: 'Gider Tutarı (₺)',
+                data: <?= json_encode($typeTotals) ?>,
+                backgroundColor: '#f39c12'
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Gider Kalemlerine Göre Dağılım'
                 }
             }
         }

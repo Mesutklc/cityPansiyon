@@ -51,3 +51,4 @@ document.addEventListener('DOMContentLoaded', function () {
   calendar.render();
 });
 </script>
+<?php include 'footer.php'; ?>

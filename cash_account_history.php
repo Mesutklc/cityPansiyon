@@ -114,5 +114,7 @@ $transactions = $stmt->fetchAll();
 <script>
   $('.select2').select2();
 </script>
+<?php include 'footer.php'; ?>
+
 </body>
 </html>

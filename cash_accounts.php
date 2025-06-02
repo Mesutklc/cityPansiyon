@@ -14,7 +14,14 @@ $accounts = $pdo->query("SELECT id, name, balance FROM cash_accounts")->fetchAll
 </head>
 <body>
 <div class="container mt-4">
-  <h2>Kasa Listesi</h2>
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Kasa Listesi</h2>
+    <div>
+      <a href="transfer.php" class="btn btn-outline-primary me-2">💸 Kasa Transferi</a>
+      
+    </div>
+  </div>
+
   <table class="table table-bordered">
     <thead>
       <tr>
@@ -36,5 +43,7 @@ $accounts = $pdo->query("SELECT id, name, balance FROM cash_accounts")->fetchAll
     </tbody>
   </table>
 </div>
+<?php include 'footer.php'; ?>
+
 </body>
 </html>

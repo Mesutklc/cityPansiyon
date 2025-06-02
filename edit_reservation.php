@@ -121,3 +121,4 @@ foreach ($rooms as $room) {
     }
   });
 </script>
+<?php include 'footer.php'; ?>

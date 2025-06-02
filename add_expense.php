@@ -51,3 +51,4 @@ $types = $pdo->query("SELECT * FROM expense_types ORDER BY name ASC")->fetchAll(
     <button type="submit" class="btn btn-danger">Gideri Kaydet</button>
   </form>
 </div>
+<?php include 'footer.php'; ?>

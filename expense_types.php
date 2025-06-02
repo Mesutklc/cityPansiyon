@@ -24,6 +24,7 @@ $types = $pdo->query("SELECT * FROM expense_types ORDER BY id ASC")->fetchAll();
     <?php endforeach; ?>
   </ul>
 </div>
+<?php include 'footer.php'; ?>
 
 <script>
 $(document).ready(function () {

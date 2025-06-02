@@ -49,6 +49,7 @@ $accounts = $pdo->query("SELECT * FROM cash_accounts ORDER BY name ASC")->fetchA
     <button type="submit" class="btn btn-success">Satışı Kaydet</button>
   </form>
 </div>
+<?php include 'footer.php'; ?>
 
 <script>
 function calculateTotal() {

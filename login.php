@@ -47,5 +47,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <?php if (!empty($error)) echo "<div class='mt-2 text-danger text-center'>$error</div>"; ?>
     </form>
 </div>
+<?php include 'footer.php'; ?>
+
 </body>
 </html>
