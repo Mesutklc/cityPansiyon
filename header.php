@@ -20,7 +20,9 @@ if (!isset($_SESSION['admin_logged_in'])) {
   <!-- FullCalendar: Timeline Görünümü -->
   <!-- FullCalendar dayGrid -->
 <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/@fullcalendar/bootstrap5@6.1.8/index.global.min.css" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@fullcalendar/bootstrap5@6.1.8/index.global.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/locales/tr.global.min.js"></script>
 
 
@@ -43,7 +45,8 @@ if (!isset($_SESSION['admin_logged_in'])) {
       border-radius: 12px;
       box-shadow: 0 2px 10px rgb(0 0 0 / 0.1);
       padding: 15px;
-      margin: 0 auto;
+      margin: 20px auto;
+      max-width: 1200px;
     }
     .fc-event {
   color: white !important;
