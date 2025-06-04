@@ -14,7 +14,7 @@ $field = $_POST['field'] ?? null;
 $value = $_POST['value'] ?? null;
 
 // Sadece izin verilen alanlar
-$allowed_fields = ['room_number', 'capacity', 'status'];
+$allowed_fields = ['room_number', 'capacity','price', 'status'];
 
 if (!$id || !$field || !in_array($field, $allowed_fields)) {
     echo json_encode(['success' => false, 'error' => 'Geçersiz parametre']);
@@ -24,6 +24,10 @@ if (!$id || !$field || !in_array($field, $allowed_fields)) {
 // Basit validasyon
 if ($field === 'capacity' && (!is_numeric($value) || $value < 1)) {
     echo json_encode(['success' => false, 'error' => 'Kapasite geçerli sayı olmalı']);
+    exit;
+}
+if ($field === 'price' && (!is_numeric($value) || $value < 1)) {
+    echo json_encode(['success' => false, 'error' => 'Fiyat geçerli sayı olmalı']);
     exit;
 }
 

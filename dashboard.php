@@ -13,6 +13,9 @@ include "header.php";
   <div id="calendar"></div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/locales/tr.global.min.js"></script>
+
 <script>
 document.addEventListener('DOMContentLoaded', function () {
   var calendarEl = document.getElementById('calendar');
@@ -30,17 +33,17 @@ document.addEventListener('DOMContentLoaded', function () {
     events: 'get_room_status.php',
 
     eventClick: function (info) {
-  const status = info.event.extendedProps.status;
-  const roomId = info.event.extendedProps.roomId;
-  const startDate = info.event.startStr.substring(0, 10);
-  const reservationId = info.event.extendedProps.reservationId; // ✅ bu alan
+      const status = info.event.extendedProps.status;
+      const roomId = info.event.extendedProps.roomId;
+      const startDate = info.event.startStr.substring(0, 10);
+      const reservationId = info.event.extendedProps.reservationId;
 
-  if (status === 'boş') {
-    window.location.href = `add_reservation.php?room_id=${roomId}&start_date=${startDate}`;
-  } else if (reservationId) {
-    window.location.href = `edit_reservation.php?reservation_id=${reservationId}`;
-  }
-},
+      if (status === 'boş') {
+        window.location.href = `add_reservation.php?room_id=${roomId}&start_date=${startDate}`;
+      } else if (reservationId) {
+        window.location.href = `edit_reservation.php?reservation_id=${reservationId}`;
+      }
+    },
 
     eventDidMount: function (info) {
       const raw = info.event.title;
@@ -59,4 +62,5 @@ document.addEventListener('DOMContentLoaded', function () {
   calendar.render();
 });
 </script>
+
 <?php include 'footer.php'; ?>

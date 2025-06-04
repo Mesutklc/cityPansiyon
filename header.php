@@ -69,9 +69,7 @@ if (!isset($_SESSION['admin_logged_in'])) {
         <li class="nav-item">
           <a class="nav-link <?= basename($_SERVER['PHP_SELF']) == 'rooms.php' ? 'active' : '' ?>" href="rooms.php">Odalar</a>
         </li>
-        <li class="nav-item">
-          <a class="nav-link <?= basename($_SERVER['PHP_SELF']) == 'reservations.php' ? 'active' : '' ?>" href="reservations.php">Rezervasyonlar</a>
-        </li>
+        
         <li class="nav-item">
           <a class="nav-link <?= basename($_SERVER['PHP_SELF']) == 'customers.php' ? 'active' : '' ?>" href="customers.php">Cariler</a>
         </li>

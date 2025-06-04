@@ -3,8 +3,9 @@ require 'config/db.php';
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-$start = date('Y-m-d', strtotime('-7 days'));
-$end = date('Y-m-d', strtotime('+14 days'));
+// TAKVİMDEN GELEN start ve end parametreleri
+$start = $_GET['start'] ?? date('Y-m-d');
+$end = $_GET['end'] ?? date('Y-m-d', strtotime('+180 days'));
 
 $rooms = $pdo->query("SELECT id, room_number FROM rooms ORDER BY room_number ASC")->fetchAll(PDO::FETCH_ASSOC);
 
@@ -21,16 +22,17 @@ $reservations = $stmt->fetchAll(PDO::FETCH_ASSOC);
 // her gün + her oda = tek event
 $events = [];
 
+$current = new DateTime($start);
+$endDate = new DateTime($end);
+
 foreach ($rooms as $room) {
     $roomId = $room['id'];
     $roomNumber = $room['room_number'];
-    $current = new DateTime($start);
-    $endDate = new DateTime($end);
+    $currentDay = clone $current;
 
-    while ($current < $endDate) {
-        $dateStr = $current->format('Y-m-d');
-        $nextDate = (clone $current)->modify('+1 day')->format('Y-m-d');
-
+    while ($currentDay < $endDate) {
+        $dateStr = $currentDay->format('Y-m-d');
+        $nextDate = (clone $currentDay)->modify('+1 day')->format('Y-m-d');
         $eventAdded = false;
 
         foreach ($reservations as $res) {
@@ -41,16 +43,16 @@ foreach ($rooms as $room) {
             ) {
                 // DOLU
                 $events[] = [
-    'id' => 'res_' . $res['id'] . '_' . $dateStr,
-    'title' => 'Oda ' . $roomNumber . ' - ' . $res['full_name'] . ' (₺' . number_format($res['balance'], 2) . ')',
-    'start' => $dateStr,
-    'end' => $nextDate,
-    'color' => '#dc3545',
-    'roomId' => $roomId,
-    'room_number' => $roomNumber,
-    'status' => 'dolu',
-    'reservationId' => $res['id'] // 🔥 bu ekleniyor!
-];
+                    'id' => 'res_' . $res['id'] . '_' . $dateStr,
+                    'title' => 'Oda ' . $roomNumber . ' - ' . $res['full_name'] . ' (₺' . number_format($res['balance'], 2) . ')',
+                    'start' => $dateStr,
+                    'end' => $nextDate,
+                    'color' => '#dc3545',
+                    'roomId' => $roomId,
+                    'room_number' => $roomNumber,
+                    'status' => 'dolu',
+                    'reservationId' => $res['id']
+                ];
                 $eventAdded = true;
                 break;
             }
@@ -70,7 +72,7 @@ foreach ($rooms as $room) {
             ];
         }
 
-        $current->modify('+1 day');
+        $currentDay->modify('+1 day');
     }
 }
 

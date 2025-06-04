@@ -29,7 +29,6 @@ $stmt = $pdo->query("SELECT * FROM rooms ORDER BY id ASC");
 $rooms = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
-<?php include 'header.php'; ?>
 
 <div class="container">
     <h2>Oda Ekle</h2>
@@ -44,6 +43,7 @@ $rooms = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <div class="col-md-4">
             <input type="number" name="capacity" class="form-control" min="1" placeholder="Kapasite" required>
         </div>
+        
         <div class="col-md-4">
             <select name="status" class="form-select" required>
                 <option value="boş">Boş</option>
@@ -63,6 +63,7 @@ $rooms = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <th>ID</th>
                 <th>Oda Numarası</th>
                 <th>Kapasite</th>
+                <th>Fiyat</th>
                 <th>Durum</th>
                 <th>İşlem</th>
             </tr>
@@ -73,6 +74,7 @@ $rooms = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <td><?= $room['id'] ?></td>
                 <td class="editable" data-field="room_number"><?= htmlspecialchars($room['room_number']) ?></td>
                 <td class="editable" data-field="capacity"><?= $room['capacity'] ?></td>
+                <td class="editable" data-field="price"><?= $room['price'] ?></td>
                 <td class="editable" data-field="status"><?= $room['status'] ?></td>
                 <td><button class="btn btn-sm btn-danger btn-delete">Sil</button></td>
             </tr>
