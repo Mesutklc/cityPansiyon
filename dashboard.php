@@ -18,13 +18,15 @@ document.addEventListener('DOMContentLoaded', function () {
   var calendarEl = document.getElementById('calendar');
 
   var calendar = new FullCalendar.Calendar(calendarEl, {
-    initialView: 'dayGridWeek',
+    themeSystem: 'bootstrap5',
+    initialView: 'dayGridMonth',
     locale: 'tr',
     headerToolbar: {
       left: 'prev,next today',
       center: 'title',
-      right: 'dayGridWeek,dayGridDay'
+      right: 'dayGridMonth,dayGridWeek,timeGridDay'
     },
+    height: 'auto',
     events: 'get_room_status.php',
 
     eventClick: function (info) {
@@ -41,10 +43,16 @@ document.addEventListener('DOMContentLoaded', function () {
 },
 
     eventDidMount: function (info) {
-      // Başlıktaki 1 - ve 2 - öneklerini gizle
       const raw = info.event.title;
       const cleanTitle = raw.replace(/^(\d+ - )/, '');
       info.el.innerHTML = cleanTitle;
+
+      new bootstrap.Tooltip(info.el, {
+        title: raw,
+        placement: 'top',
+        trigger: 'hover',
+        container: 'body'
+      });
     }
   });
 
